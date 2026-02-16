@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Search, Filter, Grid3x3, List, BarChart3, Trash2, Check, Clock, AlertCircle, X, Download, Moon, Sun, Zap, Sparkles, History, Key, Timer, Edit2, Save, TrendingUp, DollarSign, AlertTriangle, Link2, Calendar } from 'lucide-react';
+import { Plus, Search, Filter, Grid3x3, List, BarChart3, Trash2, Check, Clock, AlertCircle, X, Download, Moon, Sun, Zap, Sparkles, History, Key, Timer, Edit2, Save, TrendingUp, DollarSign, AlertTriangle, Link2, Calendar, Mail } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -90,7 +90,8 @@ export default function FluxTrackerPro() {
         timeSpent: 0,
         estimatedHours: 24,
         budget: 6000,
-        dependencies: []
+        dependencies: [],
+        recipients: 'cto@entreprise.com, tech-lead@entreprise.com'
       },
       {
         id: 2,
@@ -103,7 +104,8 @@ export default function FluxTrackerPro() {
         timeSpent: 0,
         estimatedHours: 16,
         budget: 4000,
-        dependencies: [1]
+        dependencies: [1],
+        recipients: 'dev-team@entreprise.com'
       },
       {
         id: 3,
@@ -116,7 +118,8 @@ export default function FluxTrackerPro() {
         timeSpent: 3600,
         estimatedHours: 8,
         budget: 2000,
-        dependencies: []
+        dependencies: [],
+        recipients: 'qa@entreprise.com, manager@entreprise.com'
       }
     ];
   });
@@ -141,7 +144,8 @@ export default function FluxTrackerPro() {
     priority: 'medium',
     status: 'todo',
     estimatedHours: 0,
-    budget: 0
+    budget: 0,
+    recipients: ''
   });
 
   useEffect(() => {
@@ -370,7 +374,8 @@ export default function FluxTrackerPro() {
         priority: 'medium',
         status: 'todo',
         estimatedHours: 0,
-        budget: 0
+        budget: 0,
+        recipients: ''
       });
       setShowNewItemForm(false);
       showToast('✅ Tâche créée avec succès');
@@ -444,6 +449,68 @@ export default function FluxTrackerPro() {
     return `${h > 0 ? h + 'h ' : ''}${m}m ${s}s`;
   };
 
+  const sendEmail = (item) => {
+    const subject = `[FluxTracker] ${item.object}`;
+    
+    const emailBody = `
+Bonjour,
+
+Voici les détails de la tâche "${item.object}" :
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 INFORMATIONS GÉNÉRALES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Objet : ${item.object}
+Action : ${item.action}
+Responsable : ${item.responsible}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 STATUT & PRIORITÉ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Statut : ${STATUSES[item.status].label}
+Priorité : ${PRIORITIES[item.priority].label}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏱️ TEMPS & RESSOURCES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Heures estimées : ${item.estimatedHours || 0}h
+Temps passé : ${item.timeSpent > 0 ? formatTime(item.timeSpent) : 'Non démarré'}
+Budget alloué : ${(item.budget || 0).toLocaleString('fr-FR')} €
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 DATES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Créée le : ${new Date(item.createdAt).toLocaleDateString('fr-FR', { 
+  year: 'numeric', 
+  month: 'long', 
+  day: 'numeric' 
+})}
+
+${item.dependencies && item.dependencies.length > 0 ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔗 DÉPENDANCES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Cette tâche dépend de : ${item.dependencies.length} autre(s) tâche(s)
+` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Cordialement,
+FluxTracker Pro
+    `.trim();
+
+    const mailtoLink = `mailto:${item.recipients || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+    
+    window.location.href = mailtoLink;
+    showToast('📧 Email ouvert dans votre client');
+    addToHistory('Email', `Email créé pour "${item.object}"`);
+  };
+
   const applyTemplate = (templateKey) => {
     const template = TEMPLATES[templateKey];
     const newItems = template.items.map((item, index) => ({
@@ -453,7 +520,8 @@ export default function FluxTrackerPro() {
       status: 'todo',
       createdAt: new Date(),
       timeSpent: 0,
-      dependencies: []
+      dependencies: [],
+      recipients: ''
     }));
     setItems([...items, ...newItems]);
     addToHistory('Template', `Projet "${template.name}" créé avec ${newItems.length} tâches`);
@@ -689,6 +757,12 @@ export default function FluxTrackerPro() {
                           className="text-xs md:text-sm"
                           placeholder="Responsable"
                         />
+                        <Input
+                          value={editingItem.recipients || ''}
+                          onChange={(e) => setEditingItem({ ...editingItem, recipients: e.target.value })}
+                          className="text-xs md:text-sm"
+                          placeholder="📧 Destinataires (emails séparés par virgules)"
+                        />
                         <div className="grid grid-cols-2 gap-2">
                           <Input
                             type="number"
@@ -722,6 +796,15 @@ export default function FluxTrackerPro() {
                             {item.object}
                           </h4>
                           <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => sendEmail(item)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto"
+                              title="Envoyer par email"
+                            >
+                              <Mail className="w-3 h-3 md:w-4 md:h-4 text-purple-500" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -776,6 +859,11 @@ export default function FluxTrackerPro() {
                           {item.dependencies && item.dependencies.length > 0 && (
                             <Badge variant="outline" className="text-xs">
                               🔗 {item.dependencies.length}
+                            </Badge>
+                          )}
+                          {item.recipients && (
+                            <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800">
+                              📧 {item.recipients.split(',').length}
                             </Badge>
                           )}
                         </div>
@@ -836,6 +924,15 @@ export default function FluxTrackerPro() {
                 </Badge>
               </div>
               <div className="md:col-span-1 flex justify-end gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => sendEmail(item)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto"
+                  title="Envoyer par email"
+                >
+                  <Mail className="w-3 h-3 md:w-4 md:h-4 text-purple-500" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1144,6 +1241,15 @@ export default function FluxTrackerPro() {
                       value={newItem.budget}
                       onChange={(e) => setNewItem({ ...newItem, budget: parseInt(e.target.value) || 0 })}
                       placeholder="Ex: 6000"
+                      className={`border-2 text-sm ${darkMode ? 'bg-slate-800 border-slate-700' : ''}`}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs md:text-sm font-medium mb-2 block">📧 Destinataires (emails séparés par virgules)</label>
+                    <Input
+                      value={newItem.recipients}
+                      onChange={(e) => setNewItem({ ...newItem, recipients: e.target.value })}
+                      placeholder="Ex: cto@entreprise.com, manager@entreprise.com"
                       className={`border-2 text-sm ${darkMode ? 'bg-slate-800 border-slate-700' : ''}`}
                     />
                   </div>
