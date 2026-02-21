@@ -34,7 +34,7 @@ function timeAgo(dateStr) {
 }
 
 // ── Modale notifications ─────────────────────────────────────────────────
-function NotificationModal({ notifications, unreadCount, onMarkAllRead, onMarkOneRead, onClose }) {
+function NotificationModal({ notifications, unreadCount, onMarkAllRead, onMarkOneRead, onClose, onNavigate }) {
   return (
     <div className="absolute right-0 top-12 w-96 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
 
@@ -78,7 +78,13 @@ function NotificationModal({ notifications, unreadCount, onMarkAllRead, onMarkOn
           notifications.map(notif => (
             <div
               key={notif.id}
-              onClick={() => !notif.read && onMarkOneRead(notif.id)}
+              onClick={() => {
+                if (!notif.read) onMarkOneRead(notif.id);
+                if (notif.doc_number && onNavigate) {
+                  onNavigate(notif.doc_number);
+                  onClose();
+                }
+              }}
               className={`flex gap-3 px-4 py-3 transition-colors cursor-pointer
                 ${notif.read
                   ? 'hover:bg-gray-50'
@@ -99,8 +105,12 @@ function NotificationModal({ notifications, unreadCount, onMarkAllRead, onMarkOn
                   {notif.message}
                 </p>
                 {notif.doc_number && (
-                  <span className="inline-block mt-1 text-xs font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
-                    {notif.doc_number}
+                  <span className={`inline-block mt-1 text-xs font-mono px-1.5 py-0.5 rounded transition-colors
+                    ${onNavigate
+                      ? 'bg-[#009BA4]/10 text-[#009BA4] hover:bg-[#009BA4]/20 cursor-pointer'
+                      : 'bg-gray-100 text-gray-500'
+                    }`}>
+                    {notif.doc_number} {onNavigate ? '→' : ''}
                   </span>
                 )}
               </div>
@@ -126,7 +136,7 @@ function NotificationModal({ notifications, unreadCount, onMarkAllRead, onMarkOn
 }
 
 // ── Composant principal — la cloche ─────────────────────────────────────
-export function NotificationBell({ notifications, unreadCount, onMarkAllRead, onMarkOneRead }) {
+export function NotificationBell({ notifications, unreadCount, onMarkAllRead, onMarkOneRead, onNavigate }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -173,6 +183,7 @@ export function NotificationBell({ notifications, unreadCount, onMarkAllRead, on
           unreadCount={unreadCount}
           onMarkAllRead={() => { onMarkAllRead(); }}
           onMarkOneRead={onMarkOneRead}
+          onNavigate={onNavigate}
           onClose={() => setOpen(false)}
         />
       )}

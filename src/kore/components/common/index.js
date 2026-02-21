@@ -3,3 +3,4 @@ export { KoreHeader }     from './KoreHeader';
 export { Toast }          from './Toast';
 export { SignaturePills } from './SignaturePills';
 export { NotificationBell } from './NotificationBell';
+export * from './UserMenu';

@@ -2,11 +2,13 @@
 // KORE — KoreHeader
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React from 'react';
+// Ligne 4
+import React, { useState } from 'react';
 import { LogOut, Home } from 'lucide-react';
 import { NotificationBell } from './NotificationBell';
 
 export function KoreHeader({ user, profile, signOut, docsCount, notifications, unreadCount, onMarkAllRead, onMarkOneRead }) {
+  const [isUserMenuOpen, setUserMenuOpen] = useState(false);
   return (
     <header className="bg-gradient-to-r from-[#003D5C] to-[#005078] shadow-xl">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4">

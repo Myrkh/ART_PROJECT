@@ -32,7 +32,7 @@ function SortIcon({ col, sortCol, sortDir }) {
     : <ArrowDown className="w-3 h-3 ml-1 text-[#009BA4] inline" />;
 }
 
-export function RegisterView({ docs, onAddRevision, onDownloadWithStamp, onSign, notify, user, profile }) {
+export function RegisterView({ docs, onAddRevision, onDownloadWithStamp, onSign, notify, user, profile, highlightDoc }) {
   const [search,       setSearch]       = useState('');
   const [filterDisc,   setFilterDisc]   = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -235,6 +235,7 @@ export function RegisterView({ docs, onAddRevision, onDownloadWithStamp, onSign,
                     onAddRevision={() => setRevModal(doc)}
                     onDownloadWithStamp={onDownloadWithStamp}
                     onSign={handleSignRequest}
+                    highlight={highlightDoc === doc.doc_number}
                   />
                 ))}
               </tbody>

@@ -4,7 +4,7 @@
 // v2.1 : + Vérificateur / Approbateur (optionnels) + Upload fichier R0 (optionnel)
 // ═══════════════════════════════════════════════════════════════════════════
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Plus, RefreshCw, FileText, History, Layers, AlertTriangle, Upload, Trash2 } from 'lucide-react';
 import {
   CENTRES_PROFIT, ANNEES, CODES_DISTINCTIFS,
@@ -15,6 +15,7 @@ import {
   findSimilarDocuments, formatFileSize,
 } from '../../../services';
 import { StatutBadge } from '../../common/StatutBadge';
+import { supabase }    from '../../../../lib/supabase';
 
 const ACCEPTED_TYPES = '.pdf,.docx,.doc,.xlsx,.xls,.dwg,.dxf,.pptx,.txt';
 const MAX_SIZE_MB    = 50;
@@ -57,6 +58,28 @@ function Stepper({ step, onGoTo }) {
   );
 }
 
+
+// ── ProfileSelect ──────────────────────────────────────────────────────────
+// Dropdown chargé depuis profiles — garantit que les noms correspondent
+// exactement aux full_name en base (évite les erreurs de matching notifications)
+function ProfileSelect({ value, onChange, placeholder = 'Sélectionner…', profiles, disabled }) {
+  return (
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      disabled={disabled || profiles.length === 0}
+      className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm
+                 focus:border-[#009BA4] focus:outline-none bg-white
+                 disabled:bg-gray-50 disabled:text-gray-400"
+    >
+      <option value="">{profiles.length === 0 ? 'Chargement…' : placeholder}</option>
+      {profiles.map(p => (
+        <option key={p.id} value={p.full_name}>{p.full_name}</option>
+      ))}
+    </select>
+  );
+}
+
 // ── Composant principal ────────────────────────────────────────────────────
 
 export function NewDocumentForm({ docs, onSubmit, notify }) {
@@ -87,6 +110,18 @@ export function NewDocumentForm({ docs, onSubmit, notify }) {
   const [loading,      setLoading]      = useState(false);
 
   const fileRef = useRef(null);
+
+  // ── Chargement des profils pour les champs signataires ─────────────────
+  // La policy RLS "Authenticated users can read profiles" doit être activée
+  const [profiles, setProfiles] = useState([]);
+  useEffect(() => {
+    supabase
+      .from('profiles')
+      .select('id, full_name')
+      .not('full_name', 'is', null)
+      .order('full_name')
+      .then(({ data }) => setProfiles(data || []));
+  }, []);
 
   const projectNum = useMemo(
     () => buildProjectNumber(centre, distinctif, annee, ordre),
@@ -370,8 +405,12 @@ export function NewDocumentForm({ docs, onSubmit, notify }) {
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">
                   Rédacteur <span className="text-red-500">*</span>
                 </label>
-                <input type="text" value={author} onChange={e => setAuthor(e.target.value)}
-                  placeholder="Prénom NOM" className={inputCls} />
+                <ProfileSelect
+                  value={author}
+                  onChange={setAuthor}
+                  placeholder="Sélectionner le rédacteur…"
+                  profiles={profiles}
+                />
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Objet / Modifications</label>
@@ -387,16 +426,24 @@ export function NewDocumentForm({ docs, onSubmit, notify }) {
                   Vérificateur
                   <span className="text-gray-400 normal-case font-normal ml-1">(optionnel)</span>
                 </label>
-                <input type="text" value={verificateur} onChange={e => setVerificateur(e.target.value)}
-                  placeholder="Prénom NOM" className={inputCls} />
+                <ProfileSelect
+                  value={verificateur}
+                  onChange={setVerificateur}
+                  placeholder="Sélectionner le vérificateur…"
+                  profiles={profiles}
+                />
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">
                   Approbateur
                   <span className="text-gray-400 normal-case font-normal ml-1">(optionnel)</span>
                 </label>
-                <input type="text" value={approbateur} onChange={e => setApprobateur(e.target.value)}
-                  placeholder="Prénom NOM" className={inputCls} />
+                <ProfileSelect
+                  value={approbateur}
+                  onChange={setApprobateur}
+                  placeholder="Sélectionner l'approbateur…"
+                  profiles={profiles}
+                />
               </div>
             </div>
 

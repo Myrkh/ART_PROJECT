@@ -9,7 +9,7 @@ import { StatutBadge }    from '../../common/StatutBadge';
 import { SignaturePills } from '../../common/SignaturePills';
 import { shortHash, formatFileSize,  } from '../../../services';
 
-export function DocumentRow({ doc, isExpanded, onToggle, onAddRevision, onDownloadWithStamp, onSign }) {
+export function DocumentRow({ doc, isExpanded, onToggle, onAddRevision, onDownloadWithStamp, onSign, highlight }) {
   const [copiedId,    setCopiedId]    = useState(false);
   const [downloading, setDownloading] = useState(null); // revId en cours
 
@@ -39,7 +39,9 @@ export function DocumentRow({ doc, isExpanded, onToggle, onAddRevision, onDownlo
   return (
     <>
       {/* ── Ligne principale ─────────────────────────────────────────────── */}
-      <tr className="hover:bg-blue-50/20 transition-colors group">
+      <tr className={`hover:bg-blue-50/20 transition-colors group
+        ${highlight ? 'bg-[#009BA4]/10 ring-1 ring-inset ring-[#009BA4]/30 animate-pulse' : ''}`}
+      >
 
         <td className="px-4 py-3">
           <div className="flex items-center gap-1.5">
